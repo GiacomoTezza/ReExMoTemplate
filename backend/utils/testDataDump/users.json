@@ -1,0 +1,14 @@
+[
+    {
+        "email": "asd@asd.asd",
+        "password": "qwertyQ1!",
+        "username": "John",
+        "userType": "user"
+    },
+    {
+        "email": "asd1@asd.asd",
+        "password": "qwertyQ1!",
+        "username": "Paul",
+        "userType": "admin"
+    }
+]

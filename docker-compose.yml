@@ -1,0 +1,80 @@
+version: "3"
+
+networks:
+  internal:
+    driver: bridge
+
+services:
+  mongo:
+    container_name: mongo-#[projectname]-container
+    image: mongo
+    restart: always
+    logging:
+      driver: none
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: #[mongo-root-password]
+      MONGO_INITDB_DATABASE: #[projectname]
+      MONGO_USER: user
+      MONGO_PASSWORD: #[mongo-password]
+    networks:
+      - internal
+    volumes:
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./mongod.conf:/etc/mongod.conf:ro
+
+  mongo-express:
+    container_name: mongo-express-#[projectname]-container
+    image: mongo-express
+    restart: always
+    depends_on:
+      - mongo
+    ports:
+      - 8082:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: #[mongo-root-password]
+      ME_CONFIG_MONGODB_URL: mongodb://root:#[mongo-root-password]@mongo:27017/?useUnifiedTopology=true
+    networks:
+      - internal
+
+  backend:
+    container_name: backend-#[projectname]-container
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: npm run dev
+    volumes:
+      - ./backend/:/app/
+      - /app/node_modules
+    depends_on:
+      - mongo
+    ports:
+      - '3001:3000'
+    environment:
+      DB_NAME: "#[projectname]"
+      DB_USER: "user"
+      DB_PWD: "#[mongo-password]"
+      JWT_SECRET: "#[jwt-secret]"
+    networks:
+      - internal
+
+  frontend:
+    container_name: frontend-#[projectname]-container
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: npm run dev
+    volumes:
+      - ./frontend/:/app/
+      - /app/node_modules
+    depends_on:
+      - backend
+    ports:
+      - '3000:3000'
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - internal
+    stdin_open: true
+    tty: true
